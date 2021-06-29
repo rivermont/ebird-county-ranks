@@ -6,33 +6,30 @@ from bs4 import BeautifulSoup
 from time import sleep
 
 
-
 url = "https://ebird.org/targets?r2=AQ&r1="
-cookies = {'EBIRD_SESSIONID': 'F4BA26BD1675CFC151862954CA1758C2'}
+cookies = {'EBIRD_SESSIONID': 'XXXXXXXXXXXXXXX'}  # ebird.org session cookie goes here
 
 final_sp = set()
 
 
 def main():
     global final_sp
-
+    
     # parse county list from file
-
+    
     with open('counties.json') as open_file:
         data = json.load(open_file)
-
-    # counter = 0
+    
     for county in data:
-        # counter += 1
         
         county.update({'sp': {}})
         
         response = requests.get(f'{url}{county["code"]}', cookies=cookies)
         # parse page
-
+        
         # scrape the page for the species and ranks
         soup = BeautifulSoup(response.text, 'html.parser')
-
+        
         # for every div class="ResultsStats ResultsStats--action ResultsStats--toEdge"
         for div1 in soup.find_all("div", class_="ResultsStats ResultsStats--action ResultsStats--toEdge"):
             # rank = content of > div class="ResultsStats-index"
@@ -42,14 +39,10 @@ def main():
             final_sp.add(species)
             # frequency =  content of title tag of > div class ResultsStats-stats
             freq = div1.find(class_="ResultsStats-stats")['title'][:-11]
-
+            
             county['sp'].update({species: {"rank": rank, "frequency": freq}})
-
+        
         print(county["code"] + " " + county["name"])  # where we at
-        
-        
-        # if counter > 3:
-        #     break
         
         sleep(1)  # rate limit
     
@@ -85,8 +78,6 @@ def create_file(data):
         for sp in county['sp']:
             # get current comma positions
             positions = [pos for pos, char in enumerate(sp_str) if char == c]
-            # print(positions)
-            # print(final_sp)
             
             # get position of sp in final_sp
             p = final_sp.index(sp)
@@ -94,7 +85,7 @@ def create_file(data):
             
             # write sp['rank'] to correct position
             sp_str = sp_str[:p1] + county['sp'][sp]['rank'] + sp_str[p1:]
-
+        
         final += sp_str
         
         final += '\n'
@@ -103,13 +94,9 @@ def create_file(data):
     print('Writing file...')
     with open('counties_spreadsheet.csv', 'w+') as open_file:
         open_file.write(final)
-    
-    
-    # print(final)
 
 
 if __name__ == "__main__":
     data = main()
     
     create_file(data)
-    
